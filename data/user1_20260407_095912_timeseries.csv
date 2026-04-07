@@ -1,0 +1,4 @@
+timestamp,elapsed_s,posture_score,emotion_valence,posture_alert,emotion_label,position
+1775536159.17,7.0,100,0.0,,Neutral,calibrating
+1775536169.25,17.1,100,-0.326,,Neutral,sitting
+1775536179.53,27.4,100,-0.378,,Neutral,sitting

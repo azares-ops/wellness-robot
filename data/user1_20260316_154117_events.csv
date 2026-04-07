@@ -1,0 +1,3 @@
+timestamp,elapsed_s,event_type,suggestion_key,confirm_ts,complete_ts,intention_action_gap_s,abandoned
+1773655892.65,15.0,suggestion,good_posture_neutral,,,,
+1773655899.69,22.1,dismiss,good_posture_neutral,,,,true

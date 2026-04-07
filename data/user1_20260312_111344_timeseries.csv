@@ -1,0 +1,5 @@
+timestamp,elapsed_s,posture_score,emotion_valence,posture_alert,emotion_label,position
+1773294232.32,7.8,100,0.0,,Neutral,unknown
+1773294242.46,17.9,100,-0.57,,Sadness,sitting
+1773294255.0,30.5,100,-0.325,,Sadness,sitting
+1773294267.19,42.7,100,-0.387,,Sadness,sitting

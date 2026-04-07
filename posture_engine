@@ -1,0 +1,121 @@
+cat > /home/who/grok_robo/posture_engine.py << 'EOF'
+"""
+posture_engine.py
+Uses YOLOv8-nano-pose for real-time 17-keypoint body pose estimation.
+Detects: standing/sitting, head down, uneven shoulders, spine lean, forward hunch.
+"""
+
+import cv2
+import numpy as np
+
+class PostureDetector:
+    KEYPOINT_NAMES = [
+        'nose', 'left_eye', 'right_eye', 'left_ear', 'right_ear',
+        'left_shoulder', 'right_shoulder', 'left_elbow', 'right_elbow',
+        'left_wrist', 'right_wrist', 'left_hip', 'right_hip',
+        'left_knee', 'right_knee', 'left_ankle', 'right_ankle'
+    ]
+
+    SKELETON = [
+        ('left_shoulder', 'right_shoulder'),
+        ('left_shoulder', 'left_elbow'), ('left_elbow', 'left_wrist'),
+        ('right_shoulder', 'right_elbow'), ('right_elbow', 'right_wrist'),
+        ('left_shoulder', 'left_hip'), ('right_shoulder', 'right_hip'),
+        ('left_hip', 'right_hip'),
+        ('left_hip', 'left_knee'), ('left_knee', 'left_ankle'),
+        ('right_hip', 'right_knee'), ('right_knee', 'right_ankle'),
+        ('nose', 'left_shoulder'), ('nose', 'right_shoulder'),
+    ]
+
+    def __init__(self):
+        print("[PostureDetector] Loading YOLOv8-nano-pose...")
+        from ultralytics import YOLO
+        self.model = YOLO('yolov8n-pose.pt')
+        dummy = np.zeros((320, 320, 3), dtype=np.uint8)
+        self.model(dummy, verbose=False)
+        print("[PostureDetector] Ready.")
+
+    def detect(self, frame):
+        results = self.model(frame, verbose=False, conf=0.5, imgsz=320)[0]
+
+        if results.keypoints is None or len(results.keypoints.data) == 0:
+            return {'keypoints': {}, 'posture': None, 'bbox': None, 'detected': False}
+
+        kp_data = results.keypoints.data[0].cpu().numpy()
+        box = results.boxes.xyxy[0].cpu().numpy() if results.boxes is not None else None
+
+        kp = {}
+        for i, name in enumerate(self.KEYPOINT_NAMES):
+            x, y, conf = kp_data[i]
+            kp[name] = {'x': float(x), 'y': float(y), 'confidence': float(conf)}
+
+        posture = self._analyze(kp, frame.shape)
+        return {
+            'keypoints': kp,
+            'posture': posture,
+            'bbox': box.tolist() if box is not None else None,
+            'detected': True
+        }
+
+    def _get(self, kp, name, min_conf=0.4):
+        p = kp.get(name)
+        if p and p['confidence'] >= min_conf:
+            return np.array([p['x'], p['y']])
+        return None
+
+    def _analyze(self, kp, shape):
+        alerts = []
+
+        ls = self._get(kp, 'left_shoulder')
+        rs = self._get(kp, 'right_shoulder')
+        lh = self._get(kp, 'left_hip')
+        rh = self._get(kp, 'right_hip')
+        lk = self._get(kp, 'left_knee')
+        rk = self._get(kp, 'right_knee')
+        nose = self._get(kp, 'nose')
+
+        position = 'unknown'
+        if ls is not None and rs is not None and lh is not None and rh is not None:
+            shoulder_mid = (ls + rs) / 2
+            hip_mid = (lh + rh) / 2
+            torso_len = abs(hip_mid[1] - shoulder_mid[1])
+            if lk is not None and rk is not None:
+                knee_mid = (lk + rk) / 2
+                leg_len = abs(knee_mid[1] - hip_mid[1])
+                position = 'sitting' if leg_len < torso_len * 0.6 else 'standing'
+            else:
+                position = 'standing'
+
+        if nose is not None and ls is not None and rs is not None:
+            shoulder_mid = (ls + rs) / 2
+            shoulder_width = abs(ls[0] - rs[0]) + 1e-5
+            head_drop = shoulder_mid[1] - nose[1]
+            if head_drop < shoulder_width * 0.25:
+                alerts.append('head_down')
+
+        if ls is not None and rs is not None:
+            tilt = abs(ls[1] - rs[1]) / (abs(ls[0] - rs[0]) + 1e-5)
+            if tilt > 0.2:
+                alerts.append('uneven_shoulders')
+
+        if ls is not None and rs is not None and lh is not None and rh is not None:
+            shoulder_cx = (ls[0] + rs[0]) / 2
+            hip_cx = (lh[0] + rh[0]) / 2
+            shoulder_width = abs(ls[0] - rs[0]) + 1e-5
+            if abs(shoulder_cx - hip_cx) / shoulder_width > 0.2:
+                alerts.append('spine_lean')
+
+        if ls is not None and rs is not None and lh is not None and rh is not None:
+            shoulder_mid = (ls + rs) / 2
+            hip_mid = (lh + rh) / 2
+            shoulder_width = abs(ls[0] - rs[0]) + 1e-5
+            if abs(shoulder_mid[0] - hip_mid[0]) / shoulder_width > 0.25:
+                alerts.append('forward_hunch')
+
+        return {
+            'position': position,
+            'alerts': alerts,
+            'good_posture': len(alerts) == 0
+        }
+EOF
+

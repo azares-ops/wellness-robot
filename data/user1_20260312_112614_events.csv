@@ -1,0 +1,11 @@
+timestamp,elapsed_s,event_type,suggestion_key,confirm_ts,complete_ts,intention_action_gap_s,abandoned
+1773294989.12,15.0,suggestion,negative_emotion,,,,
+1773294998.11,24.0,confirm,negative_emotion,1773294998.11,,,
+1773294999.24,25.2,complete,negative_emotion,,1773294999.24,1.1,false
+1773295009.63,35.6,suggestion,sitting_too_long,,,,
+1773295014.81,40.7,confirm,sitting_too_long,1773295014.81,,,
+1773295016.39,42.3,complete,sitting_too_long,,1773295016.39,1.6,false
+1773295029.95,55.9,suggestion,head_down_and_sad,,,,
+1773295032.3,58.2,dismiss,head_down_and_sad,,,,true
+1773295050.04,76.0,suggestion,uneven_shoulders,,,,
+1773295054.22,80.1,dismiss,uneven_shoulders,,,,true

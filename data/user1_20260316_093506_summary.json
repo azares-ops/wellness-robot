@@ -1,0 +1,31 @@
+{
+  "session_id": "user1_20260316_093506",
+  "user_id": "user1",
+  "mode": "motivator",
+  "session_start": 1773633906.467066,
+  "session_end": 1773634815.7698228,
+  "duration_s": 909.3,
+  "csv": "data/user1_20260316_093506_timeseries.csv",
+  "events": "data/user1_20260316_093506_events.csv",
+  "pe_lag_s": -200,
+  "pe_lag_min": -3.33,
+  "posture_decay_per_min": null,
+  "mean_posture_score": 87.1,
+  "std_posture_score": 13.4,
+  "mean_emotion_valence": -0.44,
+  "std_emotion_valence": 0.078,
+  "samples": 84,
+  "completed": 2,
+  "total": 37,
+  "score_pct": 5,
+  "dismissed": {
+    "good_posture_neutral": 1,
+    "uneven_shoulders": 1,
+    "forward_hunch": 1
+  },
+  "xp": {
+    "xp": 70,
+    "level": 2,
+    "xp_to_next": 400
+  }
+}

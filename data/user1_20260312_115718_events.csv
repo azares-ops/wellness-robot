@@ -1,0 +1,7 @@
+timestamp,elapsed_s,event_type,suggestion_key,confirm_ts,complete_ts,intention_action_gap_s,abandoned
+1773296853.57,15.2,suggestion,negative_emotion,,,,
+1773296858.01,19.6,dismiss,negative_emotion,,,,true
+1773296873.62,35.3,suggestion,head_down_and_sad,,,,
+1773296876.59,38.2,dismiss,head_down_and_sad,,,,true
+1773296893.96,55.6,suggestion,forward_hunch,,,,
+1773296896.14,57.8,dismiss,forward_hunch,,,,true

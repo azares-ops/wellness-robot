@@ -1,0 +1,3 @@
+timestamp,elapsed_s,posture_score,emotion_valence,posture_alert,emotion_label,position
+1773293150.43,7.7,100,0.0,,Neutral,unknown
+1773293197.29,54.6,0,0.0,,Neutral,

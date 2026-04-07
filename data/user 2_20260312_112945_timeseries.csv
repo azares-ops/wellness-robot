@@ -1,0 +1,16 @@
+timestamp,elapsed_s,posture_score,emotion_valence,posture_alert,emotion_label,position
+1773295188.41,3.1,100,0.0,,Neutral,calibrating
+1773295198.41,13.1,100,-0.227,,Happiness,sitting
+1773295208.86,23.6,100,-0.363,,Sadness,sitting
+1773295218.94,33.7,100,-0.469,,Fear,sitting
+1773295229.04,43.8,100,-0.302,,Sadness,sitting
+1773295239.08,53.8,100,-0.51,,Sadness,sitting
+1773295249.28,64.0,75,-0.557,head_down,Sadness,sitting
+1773295259.39,74.1,100,-0.36,,Sadness,sitting
+1773295269.82,84.5,100,-0.381,,Sadness,sitting
+1773295280.34,95.1,100,-0.179,,Happiness,sitting
+1773295290.48,105.2,100,-0.103,,Happiness,sitting
+1773295301.09,115.8,100,-0.496,,Sadness,sitting
+1773295311.33,126.0,100,-0.254,,Neutral,sitting
+1773295321.43,136.1,100,-0.495,,Sadness,sitting
+1773295331.73,146.5,100,-0.245,,Contempt,sitting

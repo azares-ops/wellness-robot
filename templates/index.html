@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Posture & Emotion Coach</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background: #f0f4f8; margin: 0; padding: 20px; }
+        #video { width: 100%; max-width: 480px; border: 2px solid #333; border-radius: 12px; }
+        #status { font-size: 1.4em; margin: 16px 0; font-weight: bold; }
+        #posture-emotion { font-size: 1.1em; color: #555; }
+        #suggestion_block { display: none; margin: 20px 0; }
+        #suggestion { color: #d32f2f; font-size: 1.6em; margin-bottom: 10px; }
+        lottie-player { width: 260px; height: 260px; margin: 20px auto; }
+        .btn { padding: 14px 28px; font-size: 1.2em; margin: 10px; border: none; border-radius: 8px; color: white; cursor: pointer; display: none; }
+        #done { background: #4caf50; }
+        #notdone { background: #f44336; }
+        #calibrating { color: orange; font-size: 1.2em; }
+        #personality { margin: 20px; }
+        select { padding: 8px; font-size: 1em; }
+    </style>
+</head>
+<body>
+    <h2>Posture & Emotion Coach</h2>
+
+    <video id="video" autoplay playsinline></video>
+    <br>
+
+    <div id="calibrating" style="display:none;">Calibrating posture... (Sit upright for 3s)</div>
+
+    <div id="status">Task Status: <span id="task_status">pending</span></div>
+    <div id="posture-emotion">
+        Posture: <span id="posture">—</span> | 
+        Emotion: <span id="emotion">—</span> (Conf: <span id="confidence">0.0</span>)
+    </div>
+
+    <div id="suggestion_block">
+        <h3>Suggested Mini-Task:</h3>
+        <div id="suggestion">—</div>
+        <lottie-player id="anim" background="transparent" speed="1" loop autoplay></lottie-player>
+        <div>
+            <button id="done" class="btn">✓ I Did It</button>
+            <button id="notdone" class="btn">✗ Skipped</button>
+        </div>
+    </div>
+
+    <div id="personality">
+        <label>Personality: </label>
+        <select id="personality_select">
+            <option value="friendly">Friendly 😊</option>
+            <option value="calm">Calm 🧘</option>
+        </select>
+    </div>
+
+    <script>
+        const socket = io();
+        let video = document.getElementById("video");
+        let canvas = document.createElement("canvas");
+        let ctx = canvas.getContext("2d");
+
+        // Start phone camera (front-facing for self-view)
+        navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: "user", width: {ideal: 640}, height: {ideal: 480} } 
+        }).then(stream => {
+            video.srcObject = stream;
+            video.play();
+            canvas.width = 640;
+            canvas.height = 480;
+            sendFrames();
+        }).catch(err => {
+            console.error("Camera error:", err);
+            alert("Camera access denied. Check permissions.");
+        });
+
+        // Send frames ~10-15 FPS (balance speed vs Pi load)
+        function sendFrames() {
+            if (video.videoWidth === 0) return setTimeout(sendFrames, 200);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            let dataUrl = canvas.toDataURL("image/jpeg", 0.4);  // Quality 0.4 = good for network
+            socket.emit("frame", dataUrl);
+            setTimeout(sendFrames, 70);  // ~14 FPS
+        }
+
+        // Receive updates from Pi
+        socket.on("update", (data) => {
+            document.getElementById("posture").textContent = data.posture || "—";
+            document.getElementById("emotion").textContent = data.emotion || "—";
+            document.getElementById("confidence").textContent = data.confidence_emotion || 0.0;
+            document.getElementById("task_status").textContent = data.task_status || "pending";
+
+            const block = document.getElementById("suggestion_block");
+            const anim = document.getElementById("anim");
+            const calibrating = document.getElementById("calibrating");
+
+            if (!data.calibrated) {
+                calibrating.style.display = "block";
+                block.style.display = "none";
+            } else {
+                calibrating.style.display = "none";
+                if (data.suggestion && data.suggestion_active) {
+                    block.style.display = "block";
+                    document.getElementById("suggestion").textContent = data.suggestion;
+
+                    // Load animation based on type
+                    let animFile = "default.json";  // Fallback
+                    if (data.suggestion_type === "posture") {
+                        animFile = "stretch.json";  // Or "straighten_up.json"
+                    } else if (data.suggestion_type === "tired") {
+                        animFile = "breathe.json";
+                    } // Add more mappings as needed
+                    anim.load(`/static/animations/${animFile}`);
+
+                    // Show buttons
+                    document.getElementById("done").style.display = "inline-block";
+                    document.getElementById("notdone").style.display = "inline-block";
+                } else {
+                    block.style.display = "none";
+                    document.getElementById("done").style.display = "none";
+                    document.getElementById("notdone").style.display = "none";
+                }
+            }
+        });
+
+        // Button events (send to Pi)
+        document.getElementById("done").onclick = () => {
+            socket.emit("touch", "done");
+            document.getElementById("done").style.display = "none";  // Hide after use
+            document.getElementById("notdone").style.display = "none";
+        };
+        document.getElementById("notdone").onclick = () => {
+            socket.emit("touch", "not_done");
+            document.getElementById("done").style.display = "none";
+            document.getElementById("notdone").style.display = "none";
+        };
+
+        // Personality change
+        document.getElementById("personality_select").onchange = (e) => {
+            fetch("/set_personality", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ personality: e.target.value })
+            });
+        };
+
+        // Connection status
+        socket.on("connect", () => console.log("Connected to Pi!"));
+        socket.on("disconnect", () => console.log("Lost connection to Pi"));
+    </script>
+</body>
+</html>
